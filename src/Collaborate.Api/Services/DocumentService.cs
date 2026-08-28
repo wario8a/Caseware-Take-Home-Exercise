@@ -1,6 +1,5 @@
 using Collaborate.Api.Common;
 using Collaborate.Api.Models;
-using Microsoft.Extensions.Logging;
 
 namespace Collaborate.Api.Services;
 
@@ -19,7 +18,7 @@ public sealed class DocumentService : IDocumentService
         };
     }
 
-    public Task<Result<DocumentResource>> GetAsync(
+    public async Task<Result<DocumentResource>> GetAsync(
         string workspaceId,
         string documentId,
         CancellationToken cancellationToken = default)
@@ -34,7 +33,7 @@ public sealed class DocumentService : IDocumentService
                 documentId,
                 workspaceId);
 
-            return Task.FromResult(Result<DocumentResource>.Success(document));
+            return Result<DocumentResource>.Success(document);
         }
 
         _logger.LogInformation(
@@ -42,9 +41,9 @@ public sealed class DocumentService : IDocumentService
             documentId,
             workspaceId);
 
-        return Task.FromResult(
+        return
             Result<DocumentResource>.NotFound(
-                $"Document '{documentId}' was not found in workspace '{workspaceId}'."));
+                $"Document '{documentId}' was not found in workspace '{workspaceId}'.");
     }
 
     private static string BuildKey(string workspaceId, string documentId) =>
