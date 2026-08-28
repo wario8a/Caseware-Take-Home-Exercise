@@ -10,4 +10,10 @@ public static class CollaborateObservability
 
     public static readonly Meter Meter = new(MeterName);
     public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
+    public static readonly Counter<long> DocumentReadRequests =
+        Meter.CreateCounter<long>("collaborate.documents.read.requests");
+    public static readonly Counter<long> DocumentReadFailures =
+        Meter.CreateCounter<long>("collaborate.documents.read.failures");
+    public static readonly Histogram<double> DocumentReadDuration =
+        Meter.CreateHistogram<double>("collaborate.documents.read.duration", unit: "ms");
 }
