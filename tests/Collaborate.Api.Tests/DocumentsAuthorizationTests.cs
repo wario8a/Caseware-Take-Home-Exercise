@@ -53,10 +53,32 @@ public sealed class DocumentsAuthorizationTests : IClassFixture<WebApplicationFa
     }
 
     [Fact]
+    public async Task GetDocument_ReturnsForbidden_WhenTokenOnlyHasDocumentsWrite()
+    {
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken("firm-001", "documents.write"));
+
+        var response = await client.GetAsync("/api/workspaces/ws-123/documents/doc-456");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetDocument_ReturnsForbidden_WhenFirmDoesNotMatch()
     {
         using var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken("firm-999", "documents.read"));
+
+        var response = await client.GetAsync("/api/workspaces/ws-123/documents/doc-456");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDocument_ReturnsForbidden_WhenFirmIdIsMissing()
+    {
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken(null, "documents.read"));
 
         var response = await client.GetAsync("/api/workspaces/ws-123/documents/doc-456");
 
@@ -97,7 +119,7 @@ public sealed class DocumentsAuthorizationTests : IClassFixture<WebApplicationFa
     }
 
     private static string CreateToken(
-        string firmId,
+        string? firmId,
         string scope,
         DateTime? expiresAtUtc = null,
         string? signingKey = null)
@@ -109,9 +131,12 @@ public sealed class DocumentsAuthorizationTests : IClassFixture<WebApplicationFa
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, "user-123"),
-            new("firm_id", firmId),
             new("scope", scope)
         };
+        if (!string.IsNullOrWhiteSpace(firmId))
+        {
+            claims.Add(new Claim("firm_id", firmId));
+        }
         var expires = expiresAtUtc ?? DateTime.UtcNow.AddMinutes(30);
         var notBefore = expires <= DateTime.UtcNow
             ? expires.AddMinutes(-10)

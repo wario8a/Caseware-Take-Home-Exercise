@@ -1,0 +1,233 @@
+{
+  "info": {
+    "_postman_id": "be3eb79c-7682-4afe-aaf1-36e6b5aceba9",
+    "name": "Caseware Collaborate Authorization Slice",
+    "description": "Basic requests for the protected document endpoint implemented for Part 2 Option A.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "8154642"
+  },
+  "item": [
+    {
+      "name": "Get document without token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns 401', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/workspaces/ws-123/documents/doc-456",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "workspaces",
+            "ws-123",
+            "documents",
+            "doc-456"
+          ]
+        },
+        "description": "Confirms the protected endpoint rejects unauthenticated requests."
+      },
+      "response": []
+    },
+    {
+      "name": "Get authorized document",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('response contains the document id', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.documentId).to.eql('doc-456');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authorizedToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/workspaces/ws-123/documents/doc-456",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "workspaces",
+            "ws-123",
+            "documents",
+            "doc-456"
+          ]
+        },
+        "description": "Paste a valid token for firm-001 with documents.read into authorizedToken before running."
+      },
+      "response": []
+    },
+    {
+      "name": "Get document without documents.read scope",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns 403', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{missingScopeToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/workspaces/ws-123/documents/doc-456",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "workspaces",
+            "ws-123",
+            "documents",
+            "doc-456"
+          ]
+        },
+        "description": "Paste a valid token for firm-001 without documents.read into missingScopeToken before running."
+      },
+      "response": []
+    },
+    {
+      "name": "Get missing document as authorized caller",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('returns 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authorizedToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/workspaces/ws-123/documents/missing-doc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "workspaces",
+            "ws-123",
+            "documents",
+            "missing-doc"
+          ]
+        },
+        "description": "Uses the same authorized token as the happy path to confirm 404 is returned only after authorization succeeds."
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "jwt",
+    "jwt": [
+      {
+        "key": "algorithm",
+        "value": "HS256",
+        "type": "string"
+      },
+      {
+        "key": "secret",
+        "value": "caseware-local-test-signing-key-1234567890",
+        "type": "string"
+      },
+      {
+        "key": "isSecretBase64Encoded",
+        "value": false,
+        "type": "boolean"
+      },
+      {
+        "key": "addTokenTo",
+        "value": "header",
+        "type": "string"
+      },
+      {
+        "key": "payload",
+        "value": "{\r\n  \"sub\": \"user-123\",\r\n  \"firm_id\": \"firm-001\",\r\n  \"scope\": \"documents.write comments.read\",\r\n  \"iss\": \"https://auth.caseware.local\",\r\n  \"aud\": \"collaborate-api\",\r\n  \"iat\": 1893456000,\r\n  \"exp\": 1893459600\r\n}",
+        "type": "string"
+      },
+      {
+        "key": "queryParamKey",
+        "value": "token",
+        "type": "string"
+      },
+      {
+        "key": "header",
+        "value": "{}",
+        "type": "string"
+      },
+      {
+        "key": "headerPrefix",
+        "value": "Bearer",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5088"
+    },
+    {
+      "key": "authorizedToken",
+      "value": ""
+    },
+    {
+      "key": "missingScopeToken",
+      "value": ""
+    }
+  ]
+}
