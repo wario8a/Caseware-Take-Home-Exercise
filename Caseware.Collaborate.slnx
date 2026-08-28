@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Collaborate.Api/Collaborate.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Collaborate.Api.Tests/Collaborate.Api.Tests.csproj" />
+  </Folder>
+</Solution>
