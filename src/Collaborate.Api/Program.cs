@@ -1,9 +1,15 @@
+using System.Text;
+using Collaborate.Api.Authorization;
 using Collaborate.Api.Observability;
 using Collaborate.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,8 +36,51 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description = "Part 2 Option A scaffold for a protected document resource API."
     });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "JWT bearer token used to access protected Collaborate API endpoints.",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+});
+var authenticationSection = builder.Configuration.GetSection(AuthenticationOptions.SectionName);
+var issuer = authenticationSection["Issuer"] ?? throw new InvalidOperationException("Authentication issuer is not configured.");
+var audience = authenticationSection["Audience"] ?? throw new InvalidOperationException("Authentication audience is not configured.");
+var signingKey = authenticationSection["SigningKey"] ?? throw new InvalidOperationException("Authentication signing key is not configured.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        AuthorizationPolicies.DocumentRead,
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.AddRequirements(new DocumentReadRequirement());
+        });
 });
 builder.Services.AddSingleton<IDocumentService, DocumentService>();
+builder.Services.AddSingleton<IAuthorizationHandler, DocumentReadAccessContextAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, DocumentReadResourceAuthorizationHandler>();
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService(
         serviceName: "Collaborate.Api",
@@ -58,6 +107,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
