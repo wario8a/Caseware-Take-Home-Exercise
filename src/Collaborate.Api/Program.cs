@@ -34,7 +34,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Caseware Collaborate Authorization Slice",
         Version = "v1",
-        Description = "Part 2 Option A scaffold for a protected document resource API."
+        Description = "Part 2 Option A implementation of a protected document resource endpoint with JWT-based access checks."
     });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
